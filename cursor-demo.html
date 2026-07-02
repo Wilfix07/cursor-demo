@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursor Demo Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            cursor: none;
+            position: relative;
+        }
+
+        .instructions {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #aaa;
+            font-size: 14px;
+            text-align: center;
+            z-index: 100;
+        }
+
+        .instructions strong {
+            color: #00d4ff;
+        }
+
+        /* Custom Cursor */
+        .cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00d4ff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease-out, width 0.2s, height 0.2s;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-inner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 4px;
+            background: #00d4ff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+        }
+
+        /* Interactive dots */
+        .dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        /* Click ripple effect */
+        .ripple {
+            position: fixed;
+            border: 2px solid #00d4ff;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: ripple-effect 0.8s ease-out;
+            z-index: 9998;
+        }
+
+        @keyframes ripple-effect {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.8;
+            }
+            100% {
+                width: 100px;
+                height: 100px;
+                opacity: 0;
+            }
+        }
+
+        /* Trail particles */
+        .particle {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            background: #00d4ff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9997;
+            animation: particle-fade 1s ease-out forwards;
+        }
+
+        @keyframes particle-fade {
+            to {
+                transform: scale(0) translate(20px, 20px);
+                opacity: 0;
+            }
+        }
+
+        /* Status indicator */
+        .status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: #666;
+            font-size: 12px;
+            font-family: monospace;
+        }
+
+        .status span {
+            display: block;
+            margin: 4px 0;
+        }
+
+        .status .key {
+            color: #00d4ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <strong>Mouvman sou ekran a</strong> • Clique woune pou wè efè <strong>ripple</strong> • Pèsli pou efè <strong>trail</strong>
+    </div>
+
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-inner" id="cursorInner"></div>
+
+    <div class="status">
+        <span><span class="key">Position:</span> <span id="pos">(0, 0)</span></span>
+        <span><span class="key">Activité:</span> <span id="activity">Pret</span></span>
+    </div>
+
+    <script>
+        const cursor = document.getElementById('cursor');
+        const cursorInner = document.getElementById('cursorInner');
+        const posDisplay = document.getElementById('pos');
+        const activityDisplay = document.getElementById('activity');
+
+        let mouseX = 0;
+        let mouseY = 0;
+        let isMoving = false;
+        let moveTimeout;
+
+        // Track mouse movement
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            cursor.style.transform = `translate(${mouseX - 10}px, ${mouseY - 10}px)`;
+            cursorInner.style.transform = `translate(${mouseX - 2}px, ${mouseY - 2}px)`;
+            
+            posDisplay.textContent = `(${mouseX}, ${mouseY})`;
+            
+            if (!isMoving) {
+                isMoving = true;
+                activityDisplay.textContent = 'Deplacement';
+                cursor.style.width = '24px';
+                cursor.style.height = '24px';
+            }
+            
+            clearTimeout(moveTimeout);
+            moveTimeout = setTimeout(() => {
+                isMoving = false;
+                activityDisplay.textContent = 'Pret';
+                cursor.style.width = '20px';
+                cursor.style.height = '20px';
+            }, 100);
+        });
+
+        // Create interactive dots
+        for (let i = 0; i < 50; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            dot.style.left = Math.random() * window.innerWidth + 'px';
+            dot.style.top = Math.random() * window.innerHeight + 'px';
+            document.body.appendChild(dot);
+        }
+
+        // Click ripple effect
+        document.addEventListener('click', (e) => {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = e.clientX + 'px';
+            ripple.style.top = e.clientY + 'px';
+            document.body.appendChild(ripple);
+
+            setTimeout(() => ripple.remove(), 800);
+            
+            // Activate dots near click
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach(dot => {
+                const rect = dot.getBoundingClientRect();
+                const dotX = rect.left + 4;
+                const dotY = rect.top + 4;
+                const distance = Math.sqrt(Math.pow(e.clientX - dotX, 2) + Math.pow(e.clientY - dotY, 2));
+                
+                if (distance < 100) {
+                    dot.style.transform = 'scale(2)';
+                    dot.style.background = '#00d4ff';
+                    
+                    setTimeout(() => {
+                        dot.style.transform = 'scale(1)';
+                        dot.style.background = 'rgba(0, 212, 255, 0.3)';
+                    }, 500);
+                }
+            });
+        });
+
+        // Mouse trail effect
+        let trailTimeout;
+        document.addEventListener('mousemove', (e) => {
+            if (trailTimeout) return;
+            
+            trailTimeout = setTimeout(() => {
+                createTrail(e.clientX, e.clientY);
+                trailTimeout = null;
+            }, 20);
+        });
+
+        function createTrail(x, y) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            document.body.appendChild(particle);
+
+            setTimeout(() => particle.remove(), 1000);
+        }
+
+        // Parallax background dots based on mouse
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth);
+            const y = (e.clientY / window.innerHeight);
+            
+            document.body.style.backgroundPosition = `${x * 100}px ${y * 100}px`;
+        });
+    </script>
+</body>
+</html>
